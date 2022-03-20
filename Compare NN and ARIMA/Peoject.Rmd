@@ -1,0 +1,290 @@
+---
+title: "Project"
+output: html_document
+---
+```{r}
+#install.packages("ggplot2")
+```
+
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r}
+data<-read.csv("NFLX.csv")
+data_ts=ts(data$Close)
+data$Date=as.Date(data$Date)
+#plot.ts(data_ts,ylab="Close")
+```
+```{r}
+G=ggplot(data,aes(Date,Close))+geom_line()+labs(y="Daily Close Price")
+G
+
+
+```
+```{r}
+data_ts=data$Close
+```
+```{r}
+library(tseries) 
+adf.test(diff(log(data_ts)))
+```
+
+
+
+```{r}
+acf(data_ts, lag.max=64,plot=T)
+```
+```{r}
+pacf(data_ts, lag.max=64, plot=T)
+```
+```{r}
+plot.ts(log(data_ts),ylab='Difference in NFLX')
+```
+
+
+```{r}
+plot.ts(diff(data_ts),ylab='Difference in NFLX')
+```
+
+
+
+```{r}
+acf(diff(data_ts), lag.max=64,plot=T)
+
+```
+```{r}
+pacf(diff(data_ts), lag.max=64,plot=T)
+```
+```{r}
+plot.ts(diff(log(data_ts)),ylab='Difference(log(data))')
+```
+
+
+```{r}
+acf(diff(log(data_ts)), lag.max=64,plot=T)
+```
+```{r}
+pacf(diff(log(data_ts)), lag.max=64,plot=T)
+```
+
+
+```{r}
+library(forecast)
+# to find optimal lambda
+lambda = BoxCox.lambda( data_ts )
+trans.vector = BoxCox( data_ts, lambda)
+```
+```{r}
+plot.ts(diff(trans.vector))
+```
+```{r}
+library(tseries) 
+
+adf.test(diff(log(data_ts)))
+```
+
+
+```{r}
+adf.test(diff(trans.vector))
+```
+```{r}
+cwp <- function (object){
+#
+# cwp <--> ``coefficients with p-values''
+#
+ coef <- coef(object)
+ if (length(coef) > 0) {
+ mask <- object$mask
+ sdev <- sqrt(diag(vcov(object)))
+ t.rat <- rep(NA, length(mask))
+ t.rat[mask] <- coef[mask]/sdev
+ pt <- 2 * pnorm(-abs(t.rat))
+ setmp <- rep(NA, length(mask))
+ setmp[mask] <- sdev
+ sum <- rbind(coef, setmp, t.rat, pt)
+ dimnames(sum) <- list(c("coef", "s.e.", "t ratio", "p-value"),
+ names(coef))
+ return(sum)
+ } else return(NA)
+}
+##
+```
+
+```{r}
+log_data=log(data_ts)
+log_data.fit1=arima(log_data,order=c(1,1,1));
+log_data.fit1
+```
+```{r}
+cwp(log_data.fit1)
+```
+
+```{r}
+checkresiduals(log_data.fit1)
+```
+```{r fig.height=8, fig.width=8}
+library(tactile)
+xyplot(log_data.fit1)
+```
+
+
+
+
+```{r}
+log_data=log(data_ts)
+log_data.fit2=arima(log_data,order=c(1,1,2));
+log_data.fit2
+```
+```{r}
+cwp(log_data.fit2)
+```
+
+
+```{r}
+log_data=log(data_ts)
+log_data.fit3=arima(log_data,order=c(2,1,1));
+log_data.fit3
+```
+
+
+```{r}
+cwp(log_data.fit3)
+```
+```{r}
+log_data=log(data_ts)
+log_data.fit4=arima(log_data,order=c(2,1,2));
+log_data.fit4
+
+```
+
+```{r}
+cwp(log_data.fit4)
+```
+```{r}
+checkresiduals(log_data.fit4,lag=20)
+```
+```{r fig.height=8, fig.width=8}
+#install.packages("tactile")
+library(tactile)
+xyplot(log_data.fit4,color="")
+```
+
+
+```{r}
+#212
+fit.model=fitted.values(log_data.fit4)
+data$real=log(data$Close)
+data$predict=fit.model
+library("reshape2")
+d=subset(data,select=c(Date,real,predict))
+Data=melt(d,id="Date")
+ggplot(Data,aes(x=Date,y=exp(value),colour=variable))+geom_line()+labs(y="Daily Close Price")+theme_bw()+scale_color_manual(values=c("red","black"))
+```
+```{r}
+fore.log_data=forecast(log_data.fit4,h=100)
+plot(fore.log_data)
+```
+
+
+```{r}
+fore.log_data
+```
+
+
+```{r}
+data_f<-read.csv("NFLX_f.csv")
+data_f$predict_1=exp(fore.log_data$mean)
+```
+```{r}
+log_data.fit4$coef
+```
+
+```{r}
+#111
+fit.model=fitted.values(log_data.fit1)
+data$real=log(data$Close)
+data$predict=fit.model
+library("reshape2")
+d=subset(data,select=c(Date,real,predict))
+Data=melt(d,id="Date")
+ggplot(Data,aes(x=Date,y=exp(value),colour=variable))+geom_line()+labs(y="Daily Close Price")+theme_bw()+scale_color_manual(values=c("red","black"))
+```
+```{r}
+names(fore.log_data)
+exp_forecast=exp(fore.log_data$mean)
+exp_lower=exp(fore.log_data$lower)
+exp_upper=exp(fore.log_data$upper)
+forecast.ds=data.frame(exp_forecast,exp_lower,exp_upper)
+plot(forecast.ds[,1])
+lines(forecast.ds[,2])
+forecast.ds
+```
+
+```{r}
+fore.log_data2=forecast(log_data.fit1,h=100)
+plot(fore.log_data2)
+```
+```{r}
+log_data.fit1$coef
+```
+
+```{r}
+data_f$predict_2=exp(fore.log_data2$mean)
+```
+```{r}
+fit <- nnetar(log(data_ts))
+fit
+```
+
+
+```{r}
+fit <- nnetar(log(data_ts))
+fit.model2=fitted.values(fit)
+data2=data
+data2$real=data$Close
+data2$predict=exp(fit.model2)
+d2=subset(data2,select=c(Date,real,predict))
+Data2=melt(d2,id="Date")
+ggplot(Data2,aes(x=Date,y=value,colour=variable))+geom_line()+labs(y="Daily Close Price")+theme_bw()+scale_color_manual(values=c("red","black"))
+```
+
+```{r}
+fore.log_data3=forecast(fit,h=100)
+plot(fore.log_data3)
+```
+
+
+```{r}
+fore.log_data3$mean
+```
+
+
+
+```{r}
+data_f$predict_3=exp(fore.log_data3$mean)
+```
+
+```{r}
+#install.packages("Metrics")
+library(Metrics)
+#212
+mape(data_f$Close,data_f$predict_1)
+```
+```{r}
+#111
+mape(data_f$Close,data_f$predict_2)
+```
+
+
+```{r}
+#nn 22
+mape(data_f$Close,data_f$predict_3)
+```
+
+
+
+
+
