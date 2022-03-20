@@ -1,0 +1,98 @@
+
+***Factor*** \
+  Answer: one factors which is model\
+***Levels of each factor***\
+  Answer : 4  levels which Random Forest, Naive Bayes, Support Vector Machines, Linear Discriminant Analysis\
+***Experimental unit***\
+  Answer : dataset\
+***Response. ***\
+  Answer : accuracy. \
+***Number of Replications.***\   
+  Answer : forty-five\
+***Experimental Methodology. ***\
+Answer:\
+ Replication : forty-five times
+ Randomization : dataset
+ Blocking : proportion of train/test data which are (0.9/0.1, 0.8/0.2, 0.7/0.3) \ 
+ \
+ 
+
+**************************************************************************************************************** \
+\
+***Experimental Design code in the R code *** \
+
+****************************************************************************************************************
+\
+**Question2**  \
+##RBD\
+```{r}
+Data<-read.csv("Experiment.csv",header = TRUE) 
+Data$Model = factor(Data$Model)
+Data$Block= factor(Data$Block)
+str(Data)
+```
+```{r}
+library(ggplot2)
+p <- ggplot(Data, aes(x=Model, y=Accuracy, group=Model, col = Model)) + geom_point(aes(fill=Model))+ylab("Accuracy")
+p + facet_grid(. ~Block) + theme(axis.text.x = element_text(angle = 90))
+```
+```{r}
+aov = aov(data = Data, Accuracy~Model+Block)
+summary(aov)
+
+```
+**summary**\
+Analysis variance indicates that at 5% level of significance there is sufficient evidence(F(3,713) = 22120.060, P= <2e-16) to conclude that the average number of accuracy for each model are not equal.\
+\
+\
+```{r}
+plot(aov)
+```
+\
+##Histrogram
+```{r}
+hist(residuals(aov))
+```
+\
+##Tukey HSD\
+```{r}
+#install.packages("agricolae")
+```
+\
+```{r}
+library(agricolae)
+#Tukey's Studentized range test
+Tukey=HSD.test(aov,"Model");
+Tukey
+```
+\
+```{r}
+TukeyHSD(aov)
+```
+\
+```{r}
+plot(Tukey)
+```
+\
+```{r}
+tapply(Data$Accuracy,Data$Model,mean)
+```
+\
+**summary**
+Across methods average accuracy in Random Forest, Naive Bayes, Support Vector Machines, Linear Discriminant Analysis are pairwise are different. The average accuracy for Random Forest is highest. 
+\
+\
+\
+*******************************************************************************************************
+
+
+
+
+
+
+
+
+
+
+
+
